@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String     @id @default(uuid())
+  name               String
+  email              String     @unique
+  password           String
+  role               UserRole   @default(ADMIN)
+  createdAt          DateTime   @default(now())
+  updateAt           DateTime   @updatedAt
+
+  @@map("users")
+}
+
+model Category {
+  id        String    @id @default(uuid())
+  name      String
+  img       String
+  isDeleted Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updateAt  DateTime  @updatedAt
+  products  Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id          String         @id @default(uuid())
+  name        String
+  price       Float
+  discount    Float
+  description String
+  details     String
+  sizes       String[]   @default([])
+  colors      String[]   @default([])
+  stock       Int?
+  categoryId  String
+  isDeleted   Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+  updateAt    DateTime       @updatedAt
+  category    Category?      @relation(fields: [categoryId], references: [id])
+  orderItems  OrderProduct[] 
+  images      Image[]      
+
+  @@map("products")
+}
+
+model Image {
+  id        String  @id @default(uuid())
+  img       String
+  isDeleted Boolean @default(false)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@map("images")
+}
+
+
+model Order {
+  id         String         @id @default(uuid())
+  name       String
+  address    String
+  contact    String
+  note       String?
+  slip       String?
+  sizes       String[]  @default([])
+  colors      String[]   @default([])
+  status     OrderStatus @default(pending)
+  quantity   String
+  totalPrice Float
+  isDeleted  Boolean        @default(false)
+  createdAt  DateTime       @default(now())
+  updateAt   DateTime       @updatedAt
+  orderItems OrderProduct[]
+}
+
+model OrderProduct {
+  id        String   @id @default(uuid())
+  orderId   String
+  productId String
+  order     Order    @relation(fields: [orderId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updateAt  DateTime @updatedAt
+  quantity  Int
+
+  @@unique([orderId, productId]) // Ensures unique combinations of orders and products
+}
+
+enum OrderStatus {
+  pending
+  accepted
+  rejected
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+  DELETED
+}
+
+enum UserRole {
+  SUPPER_ADMIN
+  ADMIN
+}
